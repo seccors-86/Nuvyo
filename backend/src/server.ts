@@ -36,6 +36,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { ensureSecurityAuditTable, recordSecurityEvent } from './security/audit.js';
+import { provisionDemoUsers } from './config/demoUsers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -162,6 +163,7 @@ const startServer = async () => {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
     await pool.query("INSERT INTO system_settings (key, value) VALUES ('mfa_required', 'false'::jsonb) ON CONFLICT (key) DO NOTHING");
     await ensureSecurityAuditTable();
+    await provisionDemoUsers();
     console.log('✅ Database connection successful');
 
     const adminCount = await pool.query("SELECT COUNT(*)::int AS total FROM users WHERE role = 'admin'");

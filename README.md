@@ -136,6 +136,30 @@ docker compose down
 
 Os volumes `postgres_data` e `uploads_data` preservam banco e arquivos. `docker compose down -v` apaga ambos e deve ser usado somente quando a perda desses dados for intencional.
 
+### Modo de demonstração local
+
+Para avaliar os três níveis de acesso sem cadastrar usuários manualmente, use o arquivo de demonstração:
+
+```bash
+docker compose -p nuvyo-demo -f docker-compose.yml -f docker-compose.demo.yml up -d --build
+```
+
+Ele cria ou restaura estas contas somente no ambiente local:
+
+| Perfil | Login | Senha |
+| --- | --- | --- |
+| Super Admin | `88888888888` | `88888888888` |
+| Gestor | `88888888899` | `88888888899` |
+| Colaborador | `88888888800` | `88888888800` |
+
+Abra [http://localhost:8088](http://localhost:8088). Para excluir completamente os dados da demonstração:
+
+```bash
+docker compose -p nuvyo-demo -f docker-compose.yml -f docker-compose.demo.yml down -v
+```
+
+> Essas credenciais são públicas e previsíveis. `DEMO_USERS_ENABLED=true` é recusado quando `NODE_ENV=production`; nunca altere essa proteção nem exponha o modo demo à internet.
+
 ## Desenvolvimento local
 
 Use Node.js 22 e npm 10 ou superior.
@@ -279,6 +303,7 @@ Somente valores públicos podem usar o prefixo `VITE_`.
 | `FRONTEND_URL` / `CORS_ORIGINS` | sim | Origens autorizadas, separadas por vírgula |
 | `BOOTSTRAP_ADMIN_LOGIN` | primeiro início | Login do administrador inicial |
 | `BOOTSTRAP_ADMIN_PASSWORD` | primeiro início | Senha inicial, mínimo de 12 caracteres |
+| `DEMO_USERS_ENABLED` | não | Cria as contas previsíveis de demonstração; proibido em produção |
 | `GEMINI_API_KEY` | não | Habilita os recursos de IA |
 
 Veja todos os campos em [`.env.example`](.env.example) e [`backend/.env.example`](backend/.env.example).
