@@ -71,6 +71,8 @@ patch_*.py
 # Landing page institucional usada apenas na implantação oficial
 # Mantida fora do repositório público; o build local da VPS continua usando estes arquivos.
 /components/LandingPage.tsx
+/components/LandingPageEnglish.tsx
+/tmp/
 /landing.css
 /public/landing/
 /public/robots.txt

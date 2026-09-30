@@ -19,6 +19,8 @@ import { getAreaDescendants, getHierarchicalAreaFilterIds } from '../utils';
 import { FilterSidebar } from './FilterSidebar';
 import type { ProjectCategoryConfig, ProjectStatusConfig, ProjectKpiConfig } from '../services/projectConfig';
 interface ProjectsModuleProps {
+  initialProjectId?: string | null;
+  onInitialProjectHandled?: () => void;
   currentUser: User;
   users: User[];
   areas: Area[];
@@ -91,7 +93,7 @@ const getPlainProjectDescription = (description?: string | null) => {
 
 export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
   currentUser, users, areas, tags, clients, isManager, buckets = [], projectPhases = [],
-  projectCategories = [], projectStatuses = [], projectKpis = []
+  projectCategories = [], projectStatuses = [], projectKpis = [], initialProjectId, onInitialProjectHandled
 }) => {
   const defaultAreaFilter = useMemo(() => [], []);
   const currentAreaName = useMemo(
@@ -104,6 +106,16 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
   const [loading, setLoading] = useState(true);
 
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  useEffect(() => {
+    if (!initialProjectId) return;
+    let cancelled = false;
+    getProjectById(initialProjectId).then(project => {
+      if (!cancelled) { setSelectedProject(project); onInitialProjectHandled?.(); }
+    }).catch(() => {
+      if (!cancelled) { alert('Não foi possível abrir este projeto.'); onInitialProjectHandled?.(); }
+    });
+    return () => { cancelled = true; };
+  }, [initialProjectId]);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
   // Modal state

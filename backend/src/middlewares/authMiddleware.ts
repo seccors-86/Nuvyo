@@ -25,13 +25,13 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
 
   jwt.verify(token, JWT_SECRET, { issuer: 'nuvyo-api', audience: 'nuvyo-web' }, async (err: any, user: any) => {
     if (err) {
-      return res.status(403).json({ error: 'Token inválido ou expirado.' });
+      return res.status(401).json({ error: 'Token inválido ou expirado.' });
     }
     
     try {
       const current = await pool.query('SELECT role, area_id, pode_publicar, token_version FROM users WHERE id = $1', [user.id]);
       if (!current.rows[0] || Number(current.rows[0].token_version || 0) !== Number(user.token_version || 0)) {
-        return res.status(403).json({ error: 'Sessão revogada.' });
+        return res.status(401).json({ error: 'Sessão revogada.' });
       }
       req.user = { ...user, role: current.rows[0].role, area_id: current.rows[0].area_id, pode_publicar: current.rows[0].pode_publicar };
       if (user.mfa_pending && !req.originalUrl.startsWith('/api/mfa/')) {

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {
-  getProjects, getProjectById, createProject, updateProject, deleteProject,
+  getProjects, getProjectRadar, getProjectById, createProject, updateProject, deleteProject,
   getProjectMembers, addProjectMember, removeProjectMember,
   getProjectActivities, createProjectActivity,
   updateProjectActivity, deleteProjectActivity,
@@ -12,6 +12,7 @@ const router = Router();
 // ─── Dashboard KPIs ──────────────────────────────────────────────────────────
 // IMPORTANTE: rotas estáticas SEMPRE antes das dinâmicas (:id)
 router.get('/kpis', getProjectKPIs);
+router.get('/radar', getProjectRadar);
 
 // ─── Atividades (rotas sem projectId no path) ────────────────────────────────
 // Ficam antes de /:id para evitar que "activities" seja capturado como :id
