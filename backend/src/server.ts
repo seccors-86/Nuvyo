@@ -165,6 +165,27 @@ const startServer = async () => {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
     await pool.query("INSERT INTO system_settings (key, value) VALUES ('mfa_required', 'false'::jsonb) ON CONFLICT (key) DO NOTHING");
     await ensureSecurityAuditTable();
+    await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS estimated_completed_at TIMESTAMP;
+      UPDATE tasks SET estimated_completed_at = COALESCE(updated_at, created_at)
+        WHERE (status = 'done' OR progress = 100)
+          AND completed_at IS NULL AND estimated_completed_at IS NULL;
+      CREATE OR REPLACE FUNCTION track_task_completion() RETURNS trigger AS $$
+      BEGIN
+        IF COALESCE(NEW.status = 'done' OR NEW.progress = 100, false) THEN
+          IF TG_OP = 'INSERT' THEN NEW.completed_at := CURRENT_TIMESTAMP;
+          ELSIF NOT COALESCE(OLD.status = 'done' OR OLD.progress = 100, false) THEN
+            NEW.completed_at := CURRENT_TIMESTAMP;
+          ELSE NEW.completed_at := OLD.completed_at;
+          END IF;
+        ELSE NEW.completed_at := NULL; NEW.estimated_completed_at := NULL;
+        END IF;
+        IF NEW.completed_at IS NOT NULL THEN NEW.estimated_completed_at := NULL; END IF;
+        RETURN NEW;
+      END; $$ LANGUAGE plpgsql;
+      DROP TRIGGER IF EXISTS tasks_track_completion ON tasks;
+      CREATE TRIGGER tasks_track_completion BEFORE INSERT OR UPDATE ON tasks
+        FOR EACH ROW EXECUTE FUNCTION track_task_completion();`);
     await ensureProjectKpiSchema();
     await ensurePasswordRecoverySchema();
     await ensureAIReportsSchema();

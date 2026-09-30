@@ -107,6 +107,37 @@ const buildAccessFilter = async (user: any, paramStart: number) => {
 
 // ─── PROJECTS ───────────────────────────────────────────────────────────────
 
+export const getProjectRadar = async (req: Request, res: Response) => {
+  try {
+    const access = await buildAccessFilter((req as any).user, 1);
+    const result = await pool.query(`
+      SELECT p.id, p.name, p.parent_id, p.client_id, c.name AS client_name, p.area_id,
+        p.status, p.created_at,
+        COUNT(t.id)::int AS total,
+        COUNT(t.id) FILTER (WHERE t.status = 'done' OR t.progress = 100)::int AS completed,
+        COUNT(t.id) FILTER (WHERE NOT COALESCE(t.status = 'done' OR t.progress = 100, false))::int AS pending,
+        COUNT(t.id) FILTER (WHERE NOT COALESCE(t.status = 'done' OR t.progress = 100, false)
+          AND t.deadline < CURRENT_DATE)::int AS overdue,
+        MAX(COALESCE(t.completed_at, t.estimated_completed_at))
+          FILTER (WHERE t.status = 'done' OR t.progress = 100) AS last_completed_at,
+        COALESCE(MAX(t.estimated_completed_at) FILTER (WHERE (t.status = 'done' OR t.progress = 100) AND t.completed_at IS NULL)
+          >= MAX(t.completed_at) FILTER (WHERE t.status = 'done' OR t.progress = 100),
+          COUNT(t.estimated_completed_at) FILTER (WHERE (t.status = 'done' OR t.progress = 100) AND t.completed_at IS NULL) > 0)
+          AS last_completion_estimated,
+        COUNT(t.id) FILTER (WHERE (t.status = 'done' OR t.progress = 100)
+          AND t.completed_at IS NULL AND t.estimated_completed_at IS NULL)::int AS undated_completed
+      FROM projects p
+      LEFT JOIN clients c ON c.id = p.client_id
+      LEFT JOIN tasks t ON t.project_id = p.id AND COALESCE(t.archived, false) = false
+      WHERE COALESCE(p.archived, false) = false AND ${access.clause}
+      GROUP BY p.id, c.name ORDER BY p.name`, access.params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Project radar failed:', error);
+    res.status(500).json({ error: 'Não foi possível carregar o radar de clientes.' });
+  }
+};
+
 export const getProjects = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;

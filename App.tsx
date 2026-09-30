@@ -38,6 +38,7 @@ import { GamificationCelebration } from "./components/GamificationCelebration";
 import { UserProfileModal } from "./components/UserProfileModal";
 import { TaskModal } from "./components/TaskModal";
 import { ProjectsModule } from "./components/ProjectsModule";
+import { ClientRadar } from "./components/ClientRadar";
 import { DashboardModule } from "./components/DashboardModule";
 import { ProjectModal } from "./components/ProjectModal";
 import { PrioritizationView } from "./components/PrioritizationView";
@@ -241,7 +242,8 @@ function App() {
   }, [allowedSubtreeAreaIds, currentUser, users]);
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<"dashboard" | "activities" | "tasks" | "projects" | "priority" | "support" | "recycle" | "gamification" | "suggestions">(
+  const [radarProjectId, setRadarProjectId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"radar" | "dashboard" | "activities" | "tasks" | "projects" | "priority" | "support" | "recycle" | "gamification" | "suggestions">(
     (localStorage.getItem('activeTab') as any) || "dashboard"
   );
 
@@ -1431,6 +1433,10 @@ function App() {
             Projetos
           </button>
 
+          <button onClick={() => setActiveTab('radar')} className={`px-6 py-2.5 rounded-full font-bold text-sm whitespace-nowrap flex items-center gap-2 ${activeTab === 'radar' ? 'bg-[#374A67] text-white shadow-lg' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}>
+            <Activity className="w-4 h-4" />Radar de clientes
+          </button>
+
           {/* MÓDULO DE GAMIFICAÇÃO DESATIVADO A PEDIDO
           <button
             onClick={() => setActiveTab("gamification")}
@@ -1466,7 +1472,7 @@ function App() {
         {/* MOBILE: Activity Input Removed as requested */}
 
         {/* Header Actions */}
-        {activeTab !== "projects" && activeTab !== "dashboard" && activeTab !== "suggestions" && (
+        {activeTab !== "radar" && activeTab !== "projects" && activeTab !== "dashboard" && activeTab !== "suggestions" && (
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
           <div>
             <h2 className="text-3xl font-bold text-[#0E1116] dark:text-white mb-2">
@@ -1505,7 +1511,7 @@ function App() {
         )}
 
         {/* GLOBAL FILTERS (Applies to both tabs) */}
-        {activeTab !== "projects" && activeTab !== "dashboard" && activeTab !== "suggestions" && (
+        {activeTab !== "radar" && activeTab !== "projects" && activeTab !== "dashboard" && activeTab !== "suggestions" && (
 
           <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-600 shadow-sm mb-6">
             <div className="flex flex-col lg:flex-row items-start lg:items-center gap-5">
@@ -1768,8 +1774,11 @@ function App() {
         )}
 
         {/* === TAB: PROJECTS GPO === */}
+        {activeTab === 'radar' && <ClientRadar areas={areas} onOpen={id => { setRadarProjectId(id); setActiveTab('projects'); }} />}
         {activeTab === "projects" && (
           <ProjectsModule
+            initialProjectId={radarProjectId}
+            onInitialProjectHandled={() => setRadarProjectId(null)}
             currentUser={currentUser}
             users={users}
             areas={areas}
